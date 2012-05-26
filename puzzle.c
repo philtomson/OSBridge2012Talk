@@ -34,7 +34,7 @@ char op_to_char( operation op){
   return retchar;
 };
 
-void ops_to_str( operation ops[], char out[] ){
+void ops_to_str( operation* ops, char* out ){
   int i;
   for(i=0; i < (OPS); i++){
     out[i] = op_to_char(ops[i]);
@@ -43,13 +43,13 @@ void ops_to_str( operation ops[], char out[] ){
 
 }
 
-void print_ops( operation ops[] ) {
+void print_ops( operation* ops ) {
   char ops_str[OPS+1];
   ops_to_str(ops, ops_str);
   printf("ops: %s\n", (ops_str));
 }
 
-int do_cat(operation ops[], int out[]){
+int do_cat(operation* ops, int* out){
   int ni; 
   int num = 9;
   int multiplier = 1;
@@ -57,27 +57,21 @@ int do_cat(operation ops[], int out[]){
   operation curr_op;
   int accum = 0;
   for(num = 9; num > 0; num--){
-    //printf("num: %d, out_i: %d\n", num, out_i);
     if( (num-2) >= 0) {
       curr_op = ops[num-2];
       if(curr_op == CAT) {
-	//printf("curr_op is CAT\n");
 	accum = accum + num*multiplier;
 	multiplier *= 10;
-	//printf("  num is: %d, accum is: %d, multiplier is: %d\n",num, accum, multiplier);
       } else {
-	//printf("curr_op is OTHER, num is:%d\n", num);
 	if(accum > 0) {
           out[out_i++] = accum + num*multiplier; 
 	} else {
-	  //printf("  -> num is: %d\n", num);
 	  out[out_i++] = num;
 	}
 	out[out_i++] = ops[num-2];
 	multiplier = 1;
 	accum =0;
       }
-
     } else {
 	if(accum) {
           out[out_i++] = accum + num*multiplier; 
@@ -116,7 +110,7 @@ operation succ(operation op) {
 operation max = DIV; 
 operation min = CAT;
 
-void incr(operation ops[], int len){
+void incr(operation* ops, int len){
   int i;
   bool carry = TRUE;
   for(i=0; i<len; i++){
@@ -132,7 +126,7 @@ void incr(operation ops[], int len){
   } 
 }
 
-bool max_val(operation ops[], int len){
+bool max_val(operation* ops, int len){
   int i;
   bool retval = TRUE;
   for(i=0; i<len; i++){
@@ -155,22 +149,19 @@ void find_all(){
 }
 
 //returns the length of the combined ops
-int do_eval(operation ops[]){
+int do_eval(operation* ops){
   int out[OPS + NUMS];
   int len = do_cat( ops, out);
   int accum  = 0;
   int prevop = PLUS; /* + 0 is identity */
-  //printf("%d items in the resulting array\n", len);
   int i;
   for(i = (len-1); i > -1; i--){
     int op_or_num = out[i];
     if(op_or_num < 0 ){
       /* op */
-      //printf("%c ", (op_to_char(op_or_num)));
       prevop = op_or_num;
     } else {
       /* num */
-      //printf("%d ", op_or_num);
       switch(prevop) {
 	case PLUS: 
 	  accum += op_or_num;
@@ -184,8 +175,6 @@ int do_eval(operation ops[]){
       };
     }
   }
-  //printf("\nresult:%d\n",accum);
-
   return accum;
 }
 
