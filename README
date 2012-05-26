@@ -1,0 +1,7 @@
+puzzle.ml: uses mathematical precedence (*, / before +,-)
+
+puzzle_2.ml: calculates left to right
+
+brute_force.ml: Does brute_force search for answer
+
+puzzle.c: Does brute force search implemented in c 
