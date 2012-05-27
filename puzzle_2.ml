@@ -227,14 +227,14 @@ let runit gens =
   let population = create_pop !cmd_popsize in
   let rec aux pop gen best = match gen with
     0 -> ( eval best), best, ( rank_pop pop)
-  | _ -> let pop_best = snd (List.nth (rank_pop pop) 0) in
+  | _ -> let pop_best =  (List.nth (rank_pop pop) 0) in
          let best' =
-          (if (delta target (eval pop_best)) <
+          (if (delta target (fst pop_best)) <
               (delta target (eval best)) then
              (
                (Printf.printf "gen: %d: pop_best better than best: %d : %d\n" 
-                (gens-gen) (eval pop_best)  (eval best)  );
-                pop_best
+                (gens-gen) (fst pop_best)  (eval best)  );
+                (snd pop_best)
              )
           else
             best
