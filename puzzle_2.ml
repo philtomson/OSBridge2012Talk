@@ -20,12 +20,14 @@
 let cmd_gens   = ref 5000
 let cmd_seed   = ref 42
 let cmd_target = ref 2012
+let cmd_popsize = ref 24
 let usage = "usage: " ^ Sys.argv.(0) ^ " [-g int] [-s int]"
 
 let speclist = [
-    ("-g", Arg.Int (fun d -> cmd_gens   := d),": generations: int param ");
-    ("-s", Arg.Int (fun d -> cmd_seed   := d),": seed: int param");
-    ("-t", Arg.Int (fun d -> cmd_target := d),": target: int param");
+  ("-g", Arg.Int (fun d -> cmd_gens   := d),": generations: int param ");
+  ("-s", Arg.Int (fun d -> cmd_seed   := d),": seed: int param");
+  ("-t", Arg.Int (fun d -> cmd_target := d),": target: int param");
+  ("-p", Arg.Int (fun d -> cmd_popsize := d),": population size: int param");
   ]
  
 let () =
@@ -193,45 +195,62 @@ let rank_pop pop = List.sort (fun a b ->
                                  else -1
            ) (List.map (fun e -> (eval e) , e ) pop) ;;
 
+let tournament_selection num_parents pop = 
+  let popsize = List.length pop in
+  let rec choose () = 
+    let fsti = Random.int (popsize-1) in
+    let sndi = Random.int (popsize-1) in
+    if (fsti = sndi) then
+      (* keep trying until you get two different parents *)
+      choose ()
+    else
+    (
+      let a = List.nth pop fsti in
+      let b = List.nth pop sndi in
+      if ( eval a) < ( eval b) then
+        b
+      else
+        a
+    ) in
+  let rec get_parents n parents = match n with 
+    0  ->  parents
+  | _  ->  get_parents (n-1) (( choose () )::parents) in
+  let next_parents = get_parents num_parents [] in
+  let combine in_pop out_pop  = match in_pop with
+    []  -> out_pop
+  | a::b::rest -> combine rest (cross a b) @ out_pop
+  | a::rest  -> combine rest (a::out_pop) in
+  combine next_parents [] 
+
 
 let runit gens = 
-  let population = create_pop 24 in
-  let rec aux pop gen bestest  = match gen with
-    0 -> (eval bestest),bestest,(rank_pop pop)
-  | _ -> let ranked_pop = rank_pop pop  in 
-         let best1 = snd (List.nth ranked_pop 0) in
-         let best2 = snd (List.nth ranked_pop 1) in    
-         let pop' = List.map (fun i -> mutate i )  
-                    ((cross best1 best2) @ 
-                    (*
-                    [(scramble best1)] @
-                    [(swap_ops best2)] @ 
-                    *)
-                    (cross (List.rev best2) best1) @
-                    (cross  best2 (List.rev best1)) @
-                    (create_pop 17)) in
-         let pop'' =  [ bestest] @ pop' in (*don't mutate bestest *)
-         (* fitness function *)
-         let bestest' = 
-           (if (delta target (eval best1)) < 
-               (delta target (eval bestest)) then
-              (
-               (Printf.printf "gen: %d: best1 better than bestest: %d : %d\n" 
-                (gens-gen) (eval best1)  (eval bestest)  );
-                best1
-              )
-            else
-              bestest
-            ) in
-
-         if (eval bestest') = target then
+  let population = create_pop !cmd_popsize in
+  let rec aux pop gen best = match gen with
+    0 -> ( eval best), best, ( rank_pop pop)
+  | _ -> let pop_best = snd (List.nth (rank_pop pop) 0) in
+         let best' =
+          (if (delta target (eval pop_best)) <
+              (delta target (eval best)) then
+             (
+               (Printf.printf "gen: %d: pop_best better than best: %d : %d\n" 
+                (gens-gen) (eval pop_best)  (eval best)  );
+                pop_best
+             )
+          else
+            best
+          ) in
+         if (eval best') = target then
            (* we're done *)
-           (eval bestest'),bestest',(rank_pop pop)
+           (eval best'),best', (rank_pop pop)
          else
-           aux pop'' (gen-1) bestest'
-         in
-  aux population gens (List.nth population 0) 
-                      
+         (
+           let pop' = [best']@ (List.map (fun i -> mutate i )  
+                                (tournament_selection (!cmd_popsize/2) pop)
+                               ) @ (create_pop (!cmd_popsize/2-1)) in
+           aux pop' (gen-1) best'
+         ) in
+  aux population gens (List.nth population 0)
+  
 
 let value, best, ranked_pop = runit !cmd_gens ;;
 
