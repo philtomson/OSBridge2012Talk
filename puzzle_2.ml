@@ -187,13 +187,15 @@ let eval lst =
 
 let delta t n =  abs (t - n)  ;;
 
+type value_str = { value: int; str: string }
+
 let rank_pop pop = List.sort (fun a b -> 
-                                if (delta target (fst a)) > (delta target (fst b)) then
+                                if (delta target (fst a)) > (delta target ( fst b)) then
                                   1
                                  else if a = b then 
                                   0
                                  else -1
-           ) (List.map (fun e -> (eval e) , e ) pop) ;;
+           ) (List.map (fun e ->  (eval e) , e ) pop) ;;
 
 let tournament_selection num_parents pop = 
   let popsize = List.length pop in
@@ -223,33 +225,35 @@ let tournament_selection num_parents pop =
   combine next_parents [] 
 
 
+
 let runit gens = 
   let population = create_pop !cmd_popsize in
   let rec aux pop gen best = match gen with
-    0 -> ( eval best), best, ( rank_pop pop)
+    0 -> ( fst best), (snd best), ( rank_pop pop)
   | _ -> let pop_best =  (List.nth (rank_pop pop) 0) in
          let best' =
           (if (delta target (fst pop_best)) <
-              (delta target (eval best)) then
+              (delta target (fst best)) then
              (
                (Printf.printf "gen: %d: pop_best better than best: %d : %d\n" 
-                (gens-gen) (fst pop_best)  (eval best)  );
-                (snd pop_best)
+                (gens-gen) (fst pop_best)  ( fst best)  );
+                ( pop_best)
              )
           else
             best
           ) in
-         if (eval best') = target then
+         if (fst best') = target then
            (* we're done *)
-           (eval best'),best', (rank_pop pop)
+           (fst best'),(snd best'), (rank_pop pop)
          else
          (
-           let pop' = [best']@ (List.map (fun i -> mutate i )  
+           let pop' = [(snd best')]@ (List.map (fun i -> mutate i )  
                                 (tournament_selection (!cmd_popsize/2) pop)
                                ) @ (create_pop (!cmd_popsize/2-1)) in
            aux pop' (gen-1) best'
          ) in
-  aux population gens (List.nth population 0)
+  aux population gens ((eval (List.nth population 0)),List.nth population 0) (*{value=(eval (List.nth population 0)); 
+                       str = (List.nth population 0)} *)
   
 
 let value, best, ranked_pop = runit !cmd_gens ;;
@@ -272,5 +276,5 @@ Printf.printf "Best answer is: %s = %d\n"
                     )
                  )
                ) 
-               (fst best);;
+               ( fst best);;
 
