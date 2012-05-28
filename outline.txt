@@ -1,0 +1,23 @@
+1. Introduction
+   a.  the puzzle
+   b.  "if that isn't programming hipsterism, I don't know what is"
+2. GAs
+   a. the chromosomal representation
+   b. reproduction operators
+   c. population of potential solutions
+   d. selection
+      - tournament selection
+3. code walk through
+
+
+
+Wait! How long would this take using a brute force search?
+A. Not too bad actually (5^8 = 390625)
+
+Beware programming hipsterism?
+A. C implementation
+
+WWWTLSD? (What would _Why The Lucky Stiff Do?)
+  Do it for fun!
+  (and for the learning experience)
+
