@@ -37,7 +37,7 @@ let () =
     (fun x -> raise (Arg.Bad ("Bad argument : " ^ x)))
     usage;;
 
-Random.init !cmd_seed ;;
+Random.init !cmd_seed 
 let nums = [1;   2;   3;   4;   5;   6;   7;   8;   9];;
 let num_size   = List.length nums;;
 let ops_size = num_size - 1 ;;
@@ -168,8 +168,6 @@ let do_ops lst =
                   mdps [] (oper accum n') oper in
   mdps lst 1 ( * ) ;;
 
-     
-
 let create_pop size = 
   let rec aux pop s = match s with
     0 -> pop
@@ -185,17 +183,26 @@ let eval lst =
   (cat lst' |> do_ops ) 
 
 
-let delta t n =  abs (t - n)  ;;
+let delta t n =  abs (t - n)  
+let delta_target = delta target
 
 type value_str = { value: int; str: string }
 
 let rank_pop pop = List.sort (fun a b -> 
-                                if (delta target (fst a)) > (delta target ( fst b)) then
+                                if (delta_target (fst a)) > (delta_target ( fst b)) then
                                   1
                                  else if a = b then 
                                   0
                                  else -1
            ) (List.map (fun e ->  (eval e) , e ) pop) ;;
+
+
+let take_best_after f candidates  =
+  let candidates' = List.map (fun c -> f c ) candidates in
+  List.map2 (fun x y -> 
+    if (delta_target (eval x)) < (delta_target (eval y)) then x
+    else y) candidates candidates' 
+
 
 let tournament_selection num_parents pop = 
   let popsize = List.length pop in
@@ -209,7 +216,7 @@ let tournament_selection num_parents pop =
     (
       let a = List.nth pop fsti in
       let b = List.nth pop sndi in
-      if ( eval a) < ( eval b) then
+      if ( delta_target (eval a)) < ( delta_target (eval b)) then
         b
       else
         a
@@ -220,11 +227,16 @@ let tournament_selection num_parents pop =
   let next_parents = get_parents num_parents [] in
   let combine in_pop out_pop  = match in_pop with
     []  -> out_pop
-  | a::b::rest -> combine rest (cross a b) @ out_pop
+  | a::b::rest -> let children = (cross a b) in
+                  if (Random.float 1.0 < 0.25) then
+                  (
+                    let best_children  = take_best_after (swap_ops) children in
+                    combine rest (best_children) @ out_pop
+                  )
+                  else
+                    combine rest (children) @ out_pop
   | a::rest  -> combine rest (a::out_pop) in
   combine next_parents [] 
-
-
 
 let runit gens = 
   let population = create_pop !cmd_popsize in
@@ -232,11 +244,11 @@ let runit gens =
     0 -> ( fst best), (snd best), ( rank_pop pop)
   | _ -> let pop_best =  (List.nth (rank_pop pop) 0) in
          let best' =
-          (if (delta target (fst pop_best)) <
-              (delta target (fst best)) then
+          (if (delta_target (fst pop_best)) <
+              (delta_target (fst best)) then
              (
                (Printf.printf "gen: %d: pop_best better than best: %d : %d\n" 
-                (gens-gen) (fst pop_best)  ( fst best)  );
+                (gens-gen) (fst pop_best) ( fst best)  );
                 ( pop_best)
              )
           else
