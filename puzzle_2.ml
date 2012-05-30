@@ -42,7 +42,7 @@ let nums = [1;   2;   3;   4;   5;   6;   7;   8;   9];;
 let num_size   = List.length nums;;
 let ops_size = num_size - 1 ;;
 let target = !cmd_target;;
-let mutation_rate = 0.10 ;;
+let mutation_rate = ref 0.10 ;;
 
 (* for future random proportional selection:
 module RouletteSel = struct
@@ -89,7 +89,7 @@ let mutate ops =
                            x  in
                (aux xs (op::outlst) (i+1)) in
     aux ops [] 0 in
-  if (Random.float 1.0 ) < mutation_rate then
+  if (Random.float 1.0 ) < !mutation_rate then
     copy_all_but ops (Random.int ops_len ) (num_to_op (Random.int 5)) 
   else
     ops ;;
@@ -136,7 +136,6 @@ let swap_ops lst =
              mapi (i+1) (item::accum) xs in 
   mapi 0 [] lst ;;
 
-
 (* do the 'C's *)
 let cat n_oplst =
   let rec do_cat nolst outs accum = match nolst with
@@ -148,8 +147,6 @@ let cat n_oplst =
   | n::[]       -> do_cat [] ((accum^n)::outs) (accum^n)
                    in
      do_cat n_oplst [] "";;
-
-
 
 exception BadNumOpFormat
 
@@ -239,6 +236,7 @@ let tournament_selection num_parents pop =
   combine next_parents [] 
 
 let runit gens = 
+  let gens_since_last_best = ref 0 in
   let population = create_pop !cmd_popsize in
   let rec aux pop gen best = match gen with
     0 -> ( fst best), (snd best), ( rank_pop pop)
@@ -247,18 +245,29 @@ let runit gens =
           (if (delta_target (fst pop_best)) <
               (delta_target (fst best)) then
              (
+                gens_since_last_best := 0;
+                mutation_rate := 0.10;
                (Printf.printf "gen: %d: pop_best better than best: %d : %d\n" 
                 (gens-gen) (fst pop_best) ( fst best)  );
-                ( pop_best)
+                ( pop_best); 
              )
           else
+            (
+            incr gens_since_last_best;
             best
+            )
           ) in
          if (fst best') = target then
            (* we're done *)
            (fst best'),(snd best'), (rank_pop pop)
          else
          (
+           if !gens_since_last_best > 400 then
+           ( gens_since_last_best := !gens_since_last_best/2; 
+             cmd_popsize := !cmd_popsize + 2;
+             mutation_rate := !mutation_rate +. 0.01
+           )
+           else ();
            let pop' = [(snd best')]@ (List.map (fun i -> mutate i )  
                                 (tournament_selection (!cmd_popsize/2) pop)
                                ) @ (create_pop (!cmd_popsize/2-1)) in
