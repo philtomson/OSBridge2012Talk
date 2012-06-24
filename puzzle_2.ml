@@ -23,6 +23,7 @@ let cmd_target = ref 2012
 let cmd_popsize = ref 24
 let usage = "usage: " ^ Sys.argv.(0) ^ " [-g int] [-s int]"
 
+(* commandline args *)
 let speclist = [
   ("-g", Arg.Int (fun d -> cmd_gens   := d),": generations: int param ");
   ("-s", Arg.Int (fun d -> cmd_seed   := d),": seed: int param");
@@ -38,11 +39,11 @@ let () =
     usage;;
 
 Random.init !cmd_seed 
-let nums = [1;   2;   3;   4;   5;   6;   7;   8;   9];;
-let num_size   = List.length nums;;
-let ops_size = num_size - 1 ;;
-let target = !cmd_target;;
-let mutation_rate = 0.10 ;;
+let nums = [1;   2;   3;   4;   5;   6;   7;   8;   9]
+let num_size   = List.length nums
+let ops_size = num_size - 1 
+let target = !cmd_target
+let mutation_rate = 0.10 
 
 (* for future random proportional selection:
 module RouletteSel = struct
@@ -51,9 +52,7 @@ module RouletteSel = struct
                          range_f:    float->bool } 
 end;;
 *)
-
-exception SizeMismatch;;
-
+exception SizeMismatch
 
 let num_to_op rn = match rn with 
          0  -> "C"
@@ -61,7 +60,7 @@ let num_to_op rn = match rn with
        | 2  -> "-"
        | 3  -> "*"
        | 4  -> "/"   
-       | _  -> "C" ;;
+       | _  -> "C" 
 
 (* C + - * /  *)
 let  build_rnd_ops len = 
@@ -72,11 +71,11 @@ let  build_rnd_ops len =
          let rndnum = Random.int 5 in
          let op = num_to_op rndnum in
          aux (op::outlst) (len'-1) in
-  aux [] len ;;
+  aux [] len 
 
-let rotate_left lst = (List.tl lst) @ [(List.hd lst)] ;;
+let rotate_left lst = (List.tl lst) @ [(List.hd lst)] 
 
-let rotate_right lst = List.rev (rotate_left (List.rev lst));;
+let rotate_right lst = List.rev (rotate_left (List.rev lst))
 
 let mutate ops = 
   let ops_len = List.length ops in
@@ -92,9 +91,8 @@ let mutate ops =
   if (Random.float 1.0 ) < mutation_rate then
     copy_all_but ops (Random.int ops_len ) (num_to_op (Random.int 5)) 
   else
-    ops ;;
+    ops 
    
-
 let combine n_lst op_lst  = 
   let op_lst_len = List.length op_lst in
   let rec build' n_lst' outlst i = match n_lst' with 
@@ -103,7 +101,7 @@ let combine n_lst op_lst  =
                   build' ns ( (List.nth op_lst i)::n::outlst) (i+1) 
                 else 
                   build' ns ( n::outlst) (i+1) in
-   build' n_lst [] 0 ;;
+   build' n_lst [] 0 
 
 let cross a b = 
   let rec aux a' b' aout bout = match (a',b') with
@@ -113,12 +111,12 @@ let cross a b =
   | (an1::an2::ans, bn1::bn2::bns) -> 
       aux ans bns (bn2::an1::aout) (an2::bn1::bout) 
   | (_::[],[]) | ([], _::[]) | (_,_) -> raise  SizeMismatch in
-  aux a b [] [] ;;
+  aux a b [] [] 
 
 let rec scramble lst = match lst with
   | [] -> []
   | [a] -> [a]
-  | x::y::t -> y::x::scramble t ;;
+  | x::y::t -> y::x::scramble t 
 
 let swap_ops lst = 
   let len = List.length lst in
@@ -134,8 +132,7 @@ let swap_ops lst =
               |  _  -> x
              ) in
              mapi (i+1) (item::accum) xs in 
-  mapi 0 [] lst ;;
-
+  mapi 0 [] lst 
 
 (* do the 'C's *)
 let cat n_oplst =
@@ -147,9 +144,7 @@ let cat n_oplst =
                      do_cat nos (op::(accum^n)::outs) "" 
   | n::[]       -> do_cat [] ((accum^n)::outs) (accum^n)
                    in
-     do_cat n_oplst [] "";;
-
-
+     do_cat n_oplst [] ""
 
 exception BadNumOpFormat
 
@@ -166,35 +161,36 @@ let do_ops lst =
                   )
   |  n::[]     -> let n' = int_of_string n in 
                   mdps [] (oper accum n') oper in
-  mdps lst 1 ( * ) ;;
+  mdps lst 1 ( * )  (* multiply by 1 is identity *)
 
 let create_pop size = 
   let rec aux pop s = match s with
     0 -> pop
   | _ -> aux ((build_rnd_ops ops_size)::pop) (s-1) in
-  aux [] size ;;
-
+  aux [] size 
     
-let ( |> ) a b = b a ;;
+let ( |> ) a b = b a 
 
-exception EvalError;;
-let eval lst = 
-  let lst' = (combine (List.map (fun x -> string_of_int x) nums) lst) in
-  (cat lst' |> do_ops ) 
+exception EvalError
+let eval oplst = 
+  let oplst' = (combine (List.map (fun x -> string_of_int x) nums) oplst) in
+  (cat oplst' |> do_ops ) 
 
 
 let delta t n =  abs (t - n)  
 let delta_target = delta target
 
+(* define a record type *)
 type value_str = { value: int; str: string }
 
+(* rank the population based on delta from target *)
 let rank_pop pop = List.sort (fun a b -> 
                                 if (delta_target (fst a)) > (delta_target ( fst b)) then
                                   1
                                  else if a = b then 
                                   0
                                  else -1
-           ) (List.map (fun e ->  (eval e) , e ) pop) ;;
+           ) (List.map (fun e ->  (eval e) , e ) pop) 
 
 
 let take_best_after f candidates  =
@@ -203,7 +199,8 @@ let take_best_after f candidates  =
     if (delta_target (eval x)) < (delta_target (eval y)) then x
     else y) candidates candidates' 
 
-
+(* val tournament_selection : int -> string list list -> string list list *)
+(* choose parents for the next generation *)
 let tournament_selection num_parents pop = 
   let popsize = List.length pop in
   let rec choose () = 
@@ -230,11 +227,12 @@ let tournament_selection num_parents pop =
   | a::b::rest -> let children = (cross a b) in
                   if (Random.float 1.0 < 0.25) then
                   (
+                    (* 1/4 of the time try swap_ops on children *)
                     let best_children  = take_best_after (swap_ops) children in
-                    combine rest (best_children) @ out_pop
+                    combine rest (best_children @ out_pop)
                   )
                   else
-                    combine rest (children) @ out_pop
+                    combine rest (children @ out_pop)
   | a::rest  -> combine rest (a::out_pop) in
   combine next_parents [] 
 
@@ -264,9 +262,7 @@ let runit gens =
                                ) @ (create_pop (!cmd_popsize/2-1)) in
            aux pop' (gen-1) best'
          ) in
-  aux population gens ((eval (List.nth population 0)),List.nth population 0) (*{value=(eval (List.nth population 0)); 
-                       str = (List.nth population 0)} *)
-  
+  aux population gens ((eval (List.nth population 0)),List.nth population 0) 
 
 let value, best, ranked_pop = runit !cmd_gens ;;
 
