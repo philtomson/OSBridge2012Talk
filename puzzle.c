@@ -179,41 +179,8 @@ int do_eval(operation* ops){
 }
 
 int main() {
-  /*
-  operation ops[] = { CAT, PLUS, CAT, MINUS, CAT, MULT, CAT, CAT } ;
-  char ops_str[OPS+1];
-  print_ops(ops) ;
-  ops_to_str(ops, ops_str);
-  printf("\nops str is: %s\n",ops_str);
-  int out[OPS + NUMS];
-  int len = do_cat( ops, out);
-  printf("%d items in the resulting array\n", len);
-  int i;
-  for(i = (len-1); i > -1; i--){
-    int op_or_num = out[i];
-    if(op_or_num < 0 ){
-      // op 
-      printf("%c ", (op_to_char(op_or_num)));
-    } else {
-      // num 
-      printf("%d ", op_or_num);
-    }
-  }
-  printf("\n");
-
-  do_eval(ops);
-  */
   operation ops1[] = { CAT, CAT, CAT, CAT, CAT, CAT, CAT, CAT } ;
-  /*
-  int num_counts = 20;
-  for(i=0; i< num_counts; i++){
-    incr(ops1, 8);
-    print_ops(ops1);
-  }
-  */
 
   find_all();
   
-
-
 };

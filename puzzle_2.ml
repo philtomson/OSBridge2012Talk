@@ -163,6 +163,7 @@ let do_ops lst =
                   mdps [] (oper accum n') oper in
   mdps lst 1 ( * )  (* multiply by 1 is identity *)
 
+
 let create_pop size = 
   let rec aux pop s = match s with
     0 -> pop
@@ -239,6 +240,7 @@ let tournament_selection num_parents pop =
 let runit gens = 
   let population = create_pop !cmd_popsize in
   let rec aux pop gen best = match gen with
+  (* best is a tuple: ( fitness value, chromosome ) *)
     0 -> ( fst best), (snd best), ( rank_pop pop)
   | _ -> let pop_best =  (List.nth (rank_pop pop) 0) in
          let best' =
