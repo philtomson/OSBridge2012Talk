@@ -98,21 +98,6 @@ module Ops =
   open OpCounter
   open Ops
 
-let cmd_gens = ref 5000
-let cmd_seed = ref 42
-let usage = "usage: " ^ Sys.argv.(0) ^ " [-g int] [-s int]"
-
-let speclist = [
-    ("-g", Arg.Int (fun d -> cmd_gens := d),": generations: int param ");
-    ("-s", Arg.Int (fun d -> cmd_seed := d),": seed: int param");
-  ]
- 
-let () =
-  (* Read the arguments *)
-  Arg.parse
-    speclist
-    (fun x -> raise (Arg.Bad ("Bad argument : " ^ x)))
-    usage;;
 
 let nums = [1;   2;   3;   4;   5;   6;   7;   8;   9]
 let num_size   = List.length nums
